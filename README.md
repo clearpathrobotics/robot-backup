@@ -55,6 +55,26 @@ e.g.
 Do not run the restore script as root, as doing so may result in errors.
 
 
+## Usage - Upgrading from ROS Kinetic to Melodic
+*WARNING* This feature is experimental and may not work 100% correctly yet.
+
+You can also use the upgrade.sh script to restore your backup & upgrade from ROS Kinetic to Melodic.  To do this, first back up your Kinetic robot as normal.  Then download the Melodic installation image for your robot from http://packages.clearpathrobotics.com/stable/images/latest/ and install it as normal.
+
+Once the upgraded OS is installed, copy the backup tar.gz file & upgrade.sh to your robot and run the following command:
+
+```bash upgrade.sh backup_name```
+
+This will do the same procedure as the restore.sh script, described above, but will also attempt to change any ROS Kinetic packages to their ROS Melodic equivalents.  Certain known files & folders will also be migrated:
+
+- $HOME/.bashrc will have all instances of "kinetic" replaced with "melodic"
+- /etc/ros/setup.bash will have all instances of "kinetic" replaced with "melodic"
+- /etc/ros/kinetic/* will be copied to /etc/ros/melodic/*
+
+Note that user-generated files in the home folder, as well as any files the user modified themselves elsewhere on the system may not be correctly migrated; in this case it is incumbant upon the user to migrate their own files manually as necessary.
+
+We recommend using the default "No" option when asked to reinstall APT packages.  By default the upgrade script will make a file in the user's home folder called restore-apt.sh, which will contain the names of all packages to be installed.  We advise double-checking this list and ensuring that all packages are correct before running restore-apt.sh.
+
+
 ## Troubleshooting
 The backup.sh script can hang if you have not previously SSH'd into your robot, or if its SSH keys have changed.  If this occurs, run the following command on your local computer:
 

@@ -1,8 +1,7 @@
 #!/bin/bash
 # @author       Chris Iverach-Brereton <civerachb@clearpathrobotics.com>
 # @author       David Niewinski <dniewinski@clearpathrobotics.com>
-# @description  Restores a backup of a single robot's integration setup.
-#               This script should be run locally on the robot
+# @description  Restores a backup of a single robot's and upgrades it from ROS Kinetic to Melodic
 
 # the username used during the original backup
 # by default on robots we ship this should always be "administrator"
@@ -41,6 +40,33 @@ function promptDefaultYes {
     echo 0
   else
     echo 1
+  fi
+}
+
+function changeRosDistroPackage {
+  # change all occurences of the ROS distro codename in an arbitrary string to the new codename
+  # usage: changeRosDistroPackage $from $to $package
+  FROM=$1
+  TO=$2
+  PKG=$3
+  echo "${PKG/FROM/TO}"
+}
+
+function changeRosDistroFile {
+  # change all occurences of the ROS distro codename in a file to the new codename
+  # this creates a backup of the original file too
+  # usage: changeRosDistroPackage $from $to $file
+  FROM=$1
+  TO=$2
+  FILE=$3
+
+  echo "Attempting to migrate ROS distro in file $FILE from $FROM to $TO"
+  if [ -f $FILE ];
+  then
+    cp $FILE $FILE.bak.$(date +"%Y%m%d%H%M%S")
+    sed -i 's/$FROM/$TO/g' "$FILE"
+  else
+    echo "WARNING: $FILE does not exist. Skipping migration"
   fi
 }
 
@@ -91,6 +117,18 @@ then
   ROSDISTRO=$(cat ROS_DISTRO)
   echo "ROS distro in backup is $ROSDISTRO"
 
+  # check that the ROS distribution in the backup is kinetic
+  if [ "$ROSDISTRO" != "kinetic" ];
+  then
+    echo "ERROR: this backup is using ROS $ROSDISTRO; only upgrading from kinetic is currently supported. Aborting."
+    cleanup "$1"
+    exit 1
+  else
+    OLD_ROSDISTRO="$ROSDISTRO"
+    ROSDISTRO="melodic"
+    echo "+++++ Upgrading from ROS $OLD_ROSDISTRO to $ROSDISTRO +++++"
+  fi
+
   if [ "$USERNAME" != "$(whoami)" ];
   then
     echo "WARNING: current user ($(whoami)) does not match expected account ($USERNAME)"
@@ -111,6 +149,8 @@ then
   then
     echo "Restoring etc/ros/setup.bash"
     sudo cp setup.bash /etc/ros/setup.bash
+
+    sudo changeRosDistroFile $OLD_ROSDISTRO $ROSDISTRO /etc/ros/setup.bash
   else
     echo "Skipping setup.bash; no backup"
   fi
@@ -150,6 +190,7 @@ then
   ############################ HOME FOLDER #############################
   echo "Restoring Home Folder"
   cp -r $USERNAME/. ~
+  changeRosDistroFile $OLD_ROSDISTRO $ROSDISTRO ~/.bashrc
 
   ############################ UDEV #############################
   if [ -d rules.d ];
@@ -219,7 +260,7 @@ then
     echo "Skipping additional APT sources; no backup present"
   fi
 
-  INSTALL_APT=$(promptDefaultYes "Reinstall APT packages?")
+  INSTALL_APT=$(promptDefaultNo "Reinstall APT packages?")
   if [ $INSTALL_APT == 1 ];
   then
     echo "Reinstalling APT packages"
@@ -232,11 +273,13 @@ then
     chmod +x $HOME/restore-apt.sh
   fi
   while read PKG; do
+    NEW_PKG=$(changeRosDistroPackage "ros-$OLD_ROSDISTRO" "$ROSDISTRO" "$PKG")
+
     if [ $INSTALL_APT == 1 ];
     then
-      sudo apt-get install --reinstall --yes $PKG
+      sudo apt-get install --reinstall --yes $NEW_PKG
     else
-      echo "    $PKG \\" >> $HOME/restore-apt.sh
+      echo "    $NEW_PKG \\" >> $HOME/restore-apt.sh
     fi
   done < installed_pkgs.list
 

@@ -46,25 +46,27 @@ function promptDefaultYes {
 function changeRosDistroPackage {
   # change all occurences of the ROS distro codename in an arbitrary string to the new codename
   # usage: changeRosDistroPackage $from $to $package
-  FROM=$1
-  TO=$2
+  FROM="ros-$1"
+  TO="ros-$2"
   PKG=$3
-  echo "${PKG/FROM/TO}"
+  echo "${PKG//$FROM/$TO}"
 }
 
 function changeRosDistroFile {
   # change all occurences of the ROS distro codename in a file to the new codename
   # this creates a backup of the original file too
   # usage: changeRosDistroPackage $from $to $file
-  FROM=$1
-  TO=$2
+  FROM="$1"
+  TO="$2"
   FILE=$3
 
   echo "Attempting to migrate ROS distro in file $FILE from $FROM to $TO"
   if [ -f $FILE ];
   then
     cp $FILE $FILE.bak.$(date +"%Y%m%d%H%M%S")
-    sed -i 's/$FROM/$TO/g' "$FILE"
+    REGEX="s/$FROM/$TO/"
+    CMD="sed -i '$REGEX' $FILE"
+    bash -c "$CMD"
   else
     echo "WARNING: $FILE does not exist. Skipping migration"
   fi
@@ -150,7 +152,7 @@ then
     echo "Restoring etc/ros/setup.bash"
     sudo cp setup.bash /etc/ros/setup.bash
 
-    sudo changeRosDistroFile $OLD_ROSDISTRO $ROSDISTRO /etc/ros/setup.bash
+    sudo bash -c "$(declare -f changeRosDistroFile); changeRosDistroFile $OLD_ROSDISTRO $ROSDISTRO /etc/ros/setup.bash"
   else
     echo "Skipping setup.bash; no backup"
   fi
@@ -260,7 +262,7 @@ then
     echo "Skipping additional APT sources; no backup present"
   fi
 
-  INSTALL_APT=$(promptDefaultNo "Reinstall APT packages?")
+  INSTALL_APT=$(promptDefaultYes "Reinstall APT packages?")
   if [ $INSTALL_APT == 1 ];
   then
     echo "Reinstalling APT packages"
@@ -273,13 +275,18 @@ then
     chmod +x $HOME/restore-apt.sh
   fi
   while read PKG; do
-    NEW_PKG=$(changeRosDistroPackage "ros-$OLD_ROSDISTRO" "$ROSDISTRO" "$PKG")
-
-    if [ $INSTALL_APT == 1 ];
+    # only reinstall ROS packages; there are too many other packages whose versions/names/etc... may have changed
+    # to be able to reliably reinstall them all
+    if [[ $PKG = ros-$OLD_ROSDISTRO-* ]];
     then
-      sudo apt-get install --reinstall --yes $NEW_PKG
-    else
-      echo "    $NEW_PKG \\" >> $HOME/restore-apt.sh
+      NEW_PKG=$(changeRosDistroPackage "$OLD_ROSDISTRO" "$ROSDISTRO" $PKG)
+
+      if [ $INSTALL_APT == 1 ];
+      then
+        sudo apt-get install --reinstall --yes $NEW_PKG
+      else
+        echo "    $NEW_PKG \\" >> $HOME/restore-apt.sh
+      fi
     fi
   done < installed_pkgs.list
 
@@ -298,6 +305,16 @@ then
     echo "# $(date)" >> $HOME/restore-pip.sh
     chmod +x $HOME/restore-pip.sh
   fi
+  # the default format of pip list is changing, so to keep this script working explicitly use the legacy format if it's not already
+  echo "Setting PIP to use legacy list format"
+  echo "To revert this change, edit $HOME/.config/pip/pip.conf"
+  if [ ! -f $HOME/.config/pip/pip.conf ];
+  then
+    mkdir -p $HOME/.config/pip/
+    touch $HOME/.config/pip/pip.conf
+  fi
+  echo "[list]" >> $HOME/.config/pip/pip.conf
+  echo "format=legacy" >> $HOME/.config/pip/pip.conf
   while read line; do
     TOKENS=($line)
     PKG=${TOKENS[0]}
@@ -311,22 +328,21 @@ then
     if [ $INSTALL_PIP == 1 ];
     then
       # check if the package is installed, if it's not then install it
-      if [[ "$INSTALLED_PKG" == "$PKG" && "$INSTALLED_VERSION" == "$VERSION" ]];
+      if [[ "$INSTALLED_PKG" == "$PKG" && ("$INSTALLED_VERSION" == "$VERSION" || "$INSTALLED_VERSION" > "$VERSION") ]];
       then
-        echo "pip package $PKG $VERSION is already installed"
+        echo "pip package $PKG $VERSION (or newer) is already installed"
       else
         echo "Installing pip package $PKG"
         pip install -Iv $PKG==$VERSION
       fi
     else
       # add this package to the install script
-      if [[ "$INSTALLED_PKG" == "$PKG" && "$INSTALLED_VERSION" == "$VERSION" ]];
+      if [[ "$INSTALLED_PKG" == "$PKG" && ("$INSTALLED_VERSION" == "$VERSION" || "$INSTALLED_VERSION" > "$VERSION") ]];
       then
-        echo "pip package $PKG $VERSION is already installed"
+        echo "pip package $PKG $VERSION (or newer) is already installed"
       else
         echo "pip install -Iv $PKG==$VERSION" >> $HOME/restore-pip.sh
       fi
-
     fi
   done < pip.list
 

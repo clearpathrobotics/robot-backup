@@ -15,7 +15,7 @@ Ensure you have sshpass installed:
 
 Then run the backup script. It may take several minutes depending on the amount of data being transferred:
 
-```bash backup.sh backup_name hostname [username [password]]```
+```bash backup.sh backup_name [user@]hostname [password]```
 
 e.g.
 
@@ -23,7 +23,7 @@ e.g.
 
 The script will log into the robot using SSH using and create a backup called backup_name.tar.gz (or my_robot.tar.gz, in the example above).  If your robot does not use the default Clearpath username "administrator" and default password "clearpath" you may specify the correct username & password as additional arguments.  For example, a Jackal using a Jetson TX2 would use:
 
-```bash backup.sh my_robot 10.0.1.42 nvidia nvidia```
+```bash backup.sh my_robot nvidia@10.0.1.42 nvidia```
 
 The backup script will copy the following data, which can be restored later (see below):
 

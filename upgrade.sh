@@ -3,15 +3,7 @@
 # @author       David Niewinski <dniewinski@clearpathrobotics.com>
 # @description  Restores a backup of a single robot's and upgrades it from ROS Kinetic to Melodic
 
-# the username used during the original backup
-# by default on robots we ship this should always be "administrator"
-USERNAME=administrator
-
-# the version of _this_ script
-VERSION=2.0.1
-
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+############################## FUNCTION DEFINITIONS ############################
 
 function cleanup {
   echo "Cleaning Up $(pwd)/$1"
@@ -71,6 +63,63 @@ function changeRosDistroFile {
     echo "WARNING: $FILE does not exist. Skipping migration"
   fi
 }
+
+function tryInstallApt {
+  # usage: tryInstallApt $package
+  PACKAGE=$1
+
+  sudo apt-get install --reinstall --yes $PACKAGE
+  RESULT=$?
+  if [ $RESULT -ne 0 ];
+  then
+    echo -e "[WARN] ${RED}Failed to install $PACKAGE ${NC}"
+
+    if [ ! -f $HOME/could_not_install_apt.sh ];
+    then
+      echo "#!/bin/bash" > $HOME/could_not_install_apt.sh
+      echo "# The following packages could not be reinstalled" >> $HOME/could_not_install_apt.sh
+      echo "sudo apt-get install --reinstall --yes \\" >> $HOME/could_not_install_apt.sh
+    fi
+
+    echo "    $PACKAGE \\" >> $HOME/could_not_install_apt.sh
+  fi
+}
+
+function tryInstallPip {
+  # usage: tryInstallPip $package $version
+
+  PKG=$1
+  VERSION=$2
+
+  pip install -Iv $PKG==$VERSION
+  RESULT=$?
+  if [ $RESULT -ne 0 ];
+  then
+    echo -e "[WARN] ${RED}Failed to install $PACKAGE v$VERSION ${NC}"
+
+    if [ ! -f $HOME/could_not_install_pip.sh ];
+    then
+      echo "#!/bin/bash" > $HOME/could_not_install_pip.sh
+      echo "# The following packages could not be reinstalled" >> $HOME/could_not_install_pip.sh
+    fi
+
+    echo "pip install $PKG==$VERSION" >> $HOME/could_not_install_pip.sh
+  fi
+
+}
+
+############################## ARGUMENT PARSING ############################
+
+# the username used during the original backup
+# by default on robots we ship this should always be "administrator"
+USERNAME=administrator
+
+# the version of _this_ script
+VERSION=2.0.1
+
+RED='\e[31m'
+GREEN='\e[32m'
+NC='\e[39m' # No Color
 
 if [ $# -ge 1 ]
 then
@@ -279,13 +328,22 @@ then
     # to be able to reliably reinstall them all
     if [[ $PKG = ros-$OLD_ROSDISTRO-* ]];
     then
+      # packages that are of the form ros-kinetic-* need to be upgraded to ros-melodic-*
       NEW_PKG=$(changeRosDistroPackage "$OLD_ROSDISTRO" "$ROSDISTRO" $PKG)
 
       if [ $INSTALL_APT == 1 ];
       then
-        sudo apt-get install --reinstall --yes $NEW_PKG
+        tryInstallApt $NEW_PKG
       else
         echo "    $NEW_PKG \\" >> $HOME/restore-apt.sh
+      fi
+    else
+      # other packages we'll try to install, but they may not be available
+      if [ $INSTALL_APT == 1 ];
+      then
+        tryInstallApt $PKG
+      else
+        echo "    $PKG \\" >> $HOME/restore-apt.sh
       fi
     fi
   done < installed_pkgs.list
@@ -318,12 +376,12 @@ then
   while read line; do
     TOKENS=($line)
     PKG=${TOKENS[0]}
-    VERSION=${TOKENS[1]}
+    VERSION=$(echo ${TOKENS[1]} | sed 's/[)(]//g')
 
     PIP_OUT=$(pip list|grep "^$PKG\s")
     TOKENS=($PIP_OUT)
     INSTALLED_PKG=${TOKENS[0]}
-    INSTALLED_VERSION=${TOKENS[1]}
+    INSTALLED_VERSION=$(echo ${TOKENS[1]} | sed 's/[)(]//g')
 
     if [ $INSTALL_PIP == 1 ];
     then
@@ -333,7 +391,7 @@ then
         echo "pip package $PKG $VERSION (or newer) is already installed"
       else
         echo "Installing pip package $PKG"
-        pip install -Iv $PKG==$VERSION
+        tryInstallPip $PKG $VERSION
       fi
     else
       # add this package to the install script
@@ -355,11 +413,21 @@ then
 
   if [ $INSTALL_APT == 0 ];
   then
-    echo -e "Run ${RED}$HOME/restore-apt.sh${NC} to resintall APT packages"
+    echo -e "Run ${GREEN}$HOME/restore-apt.sh${NC} to resintall APT packages"
+  else
+    if [ -f $HOME/could_not_install_apt.sh ];
+    then
+      echo -e "[WARN] ${RED}Some APT packages could not be installed.  See ${GREEN}$HOME/could_not_install_apt.sh${RED} for more details.${NC}"
+    fi
   fi
   if [ $INSTALL_PIP == 0 ];
   then
-    echo -e "Run ${RED}$HOME/restore-pip.sh${NC} to resintall PIP packages"
+    echo -e "Run ${GREEN}$HOME/restore-pip.sh${NC} to resintall PIP packages"
+  else
+    if [ -f $HOME/could_not_install_pip.sh ];
+    then
+      echo -e "[WARN] ${RED}Some PIP packages could not be installed.  See ${GREEN}$HOME/could_not_install_pip.sh${RED} for more details.${NC}"
+    fi
   fi
 else
   echo "USAGE: bash restore.sh customer_name [username]"

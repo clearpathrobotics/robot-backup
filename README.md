@@ -1,5 +1,5 @@
 # Robot Backup
-This package will automatically backup a remote robot to your local machine into a single archive.  It will Backup:
+This package will automatically backup a remote robot to your local machine into a single archive.  It will back up:
 
 - etc/setup.bash
 - Home Folder

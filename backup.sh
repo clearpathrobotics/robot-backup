@@ -103,9 +103,6 @@ then
   sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/tmp/installed_pkgs.list .
   echo "rm /tmp/installed_pkgs.list" | sshpass -p "$PASSWORD" ssh -T $USERNAME@$HOST
 
-  echo "Cleaning up bag"
-  echo "rm auto_backup*.bag" | sshpass -p "$PASSWORD" ssh -T $USERNAME@$HOST
-
   echo "Copying Home Folder"
   sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:~ .
 

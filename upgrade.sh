@@ -209,15 +209,16 @@ then
   if [ -d ros.d ];
   then
     echo "Restoring Bringup"
+    sudo mkdir -p /etc/ros/$ROSDISTRO/ros.d
     sudo cp -r ros.d/. /etc/ros/$ROSDISTRO/ros.d
   else
     echo "Skipping bringup; no backup"
   fi
 
-  if [ -d sbin ];
+  if [ -d usr/sbin ];
   then
     echo "Restoring sbin"
-    sudo cp -r sbin/. /usr/sbin
+    sudo cp -r usr/sbin/. /usr/sbin
   else
     echo "Skipping sbin; no backup"
   fi
@@ -247,7 +248,7 @@ then
   if [ -d rules.d ];
   then
     echo "Restoring udev rules"
-    sudo cp rules.d/. /etc/udev/rules.d
+    sudo cp -r rules.d/. /etc/udev/rules.d
   else
     echo "Skipping udev rules; no backup"
   fi

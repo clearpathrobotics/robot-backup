@@ -218,6 +218,10 @@ then
   if [ -d usr/sbin ];
   then
     echo "Restoring sbin"
+    if [ -f usr/sbin/ros-start ];
+    then
+        changeRosDistroFile $OLD_ROSDISTRO $ROSDISTRO usr/sbin/ros-start
+    fi
     sudo cp -r usr/sbin/. /usr/sbin
   else
     echo "Skipping sbin; no backup"

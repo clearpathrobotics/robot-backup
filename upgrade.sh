@@ -237,8 +237,9 @@ then
 
   if [ -d system ];
   then
-    echo "Restoring Systemd"
-    sudo cp -r system/. /etc/systemd/system
+    echo "Restoring ROS Systemd Unit File"
+    sudo cp -r system/multi-user.target.wants/ros.service /etc/systemd/system
+    sudo systemctl enable ros.service
   else
     echo "Skipping systemd; no backup"
   fi

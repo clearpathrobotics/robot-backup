@@ -218,6 +218,10 @@ then
   if [ -d usr/sbin ];
   then
     echo "Restoring sbin"
+    if [ -f usr/sbin/ros-start ];
+    then
+        changeRosDistroFile $OLD_ROSDISTRO $ROSDISTRO usr/sbin/ros-start
+    fi
     sudo cp -r usr/sbin/. /usr/sbin
   else
     echo "Skipping sbin; no backup"
@@ -233,8 +237,9 @@ then
 
   if [ -d system ];
   then
-    echo "Restoring Systemd"
-    sudo cp -r system/. /etc/systemd/system
+    echo "Restoring ROS Systemd Unit File"
+    sudo cp -r system/multi-user.target.wants/ros.service /etc/systemd/system
+    sudo systemctl enable ros.service
   else
     echo "Skipping systemd; no backup"
   fi

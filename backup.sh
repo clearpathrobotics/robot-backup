@@ -70,7 +70,7 @@ then
   sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/hosts .
 
   echo "Copying IPTables"
-  sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/iptables .
+  sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/etc/iptables .
 
   echo "Copying Bringup"
   sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/ros/setup.bash .
@@ -80,10 +80,10 @@ then
   sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/usr/sbin/*stop usr/sbin
 
   echo "Copying RosDep sources"
-  sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/etc/ros/rosdep/ .
+  sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/etc/ros/rosdep .
 
   echo "Copying rclocal"
-  sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/etc/rc.local .
+  sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/rc.local .
 
   echo "Copying pip packages"
   # strip the first 2 lines from pip list output; they're headers we don't need!

@@ -155,7 +155,7 @@ then
   if [ -d rules.d ];
   then
     echo "Restoring udev rules"
-    sudo cp rules.d/. /etc/udev/rules.d
+    sudo cp -r rules.d/. /etc/udev/rules.d
   else
     echo "Skipping udev rules; no backup"
   fi

@@ -186,7 +186,7 @@ then
   if [ -f iptables ];
   then
     echo "Restoring iptables"
-    sudo cp iptables /etc/iptables
+    sudo cp -r iptables/. /etc/iptables
   else
     echo "Skipping /etc/iptables; no backup"
   fi

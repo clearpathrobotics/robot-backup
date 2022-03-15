@@ -9,7 +9,7 @@
 USERNAME=administrator
 
 # the version of _this_ script
-VERSION=2.0.1
+VERSION=2.0.2
 
 RED='\033[0;31m'
 NC='\033[0m' # No Color
@@ -162,12 +162,19 @@ then
 
   ############################ NETWORK #############################
   echo "Restoring Network Setup"
-  if [ -f netplan ];
+  if [ -f interfaces ];
   then
-    echo "Restoring netplan"
+    echo "Restoring interfaces"
+    sudo cp interfaces /etc/network/interfaces
+  else
+    echo "Skipping /etc/network/interfaces; no backup"
+  fi
+  if [ -d netplan ];
+  then
+    echo "Restoring netplan files"
     sudo cp -r netplan/. /etc/netplan
   else
-    echo "Skipping /etc/netplan; no backup"
+    echo "Skipping netplan; no backup"
   fi
   if [ -f hostname ];
   then

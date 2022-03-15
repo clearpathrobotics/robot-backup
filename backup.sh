@@ -10,7 +10,7 @@ USERNAME=administrator
 PASSWORD=clearpath
 
 # the version of _this_ script
-VERSION=2.0.1
+VERSION=2.0.2
 
 if [ $# -ge 2 ]
 then
@@ -27,13 +27,13 @@ then
     echo "Host: $HOST"
   fi
 
-    if [ $# == 3 ];
-    then
-      echo "Overriding default password"
-      PASSWORD=$3
+  if [ $# == 3 ];
+  then
+    echo "Overriding default password"
+    PASSWORD=$3
 
-      echo "Password: $PASSWORD"
-    fi
+    echo "Password: $PASSWORD"
+  fi
 
   echo "===== Starting Clearpath Robotics Robot Backup v$VERSION ====="
   echo "Creating backup for $USERNAME@$HOST"
@@ -80,6 +80,7 @@ then
   sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/etc/udev/rules.d .
 
   echo "Copying Network Setup"
+  sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/network/interfaces .
   sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/etc/netplan .
   sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/hostname .
   sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/hosts .
@@ -130,8 +131,8 @@ then
 
   ######################## REMOVE BIN+DEV #########################
   #echo "Cleaning"
-  rm -rf $1/administrator/catkin_ws/build/
-  rm -rf $1/administrator/catkin_ws/devel/
+  rm -rf $1/$USERNAME/catkin_ws/build/
+  rm -rf $1/$USERNAME/catkin_ws/devel/
   #echo "Done"
   #################################################################
 

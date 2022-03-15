@@ -9,9 +9,10 @@ This package will automatically backup a remote robot to your local machine into
 - Bringup
 
 ## Usage - Backing things up
-Ensure you have sshpass installed:
+Ensure you have ```sshpass``` and ```rsync``` installed:
 
 ```sudo apt-get install sshpass```
+```sudo apt-get install rsync```
 
 Then run the backup script. It may take several minutes depending on the amount of data being transferred:
 

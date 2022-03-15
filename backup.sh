@@ -36,8 +36,23 @@ then
     fi
 
   echo "===== Starting Clearpath Robotics Robot Backup v$VERSION ====="
-  echo "Creating backup for $USER@$HOST"
+  echo "Creating backup for $USERNAME@$HOST"
 
+  ############################ DEPENDENCY CHECK ###############################
+  if ! command -v rsync &> /dev/null;
+  then
+    echo "rsync is not installed"
+    echo "please run 'sudo apt-get install rsync'"
+    exit 1
+  fi
+  if ! command -v sshpass &> /dev/null;
+  then
+    echo "sshpass is not installed"
+    echo "please run 'sudo apt-get install sshpass'"
+    exit 1
+  fi
+
+  ############################ CREATE WORKING DIRECTORY ###############################
   echo "Creating Directory <" $PWD"/"$CUSTOMER ">"
   mkdir "$CUSTOMER"
   cd "$CUSTOMER"
@@ -104,7 +119,10 @@ then
   echo "rm /tmp/installed_pkgs.list" | sshpass -p "$PASSWORD" ssh -T $USERNAME@$HOST
 
   echo "Copying Home Folder"
-  sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:~ .
+  # rather than doing an scp -r of the whole folder, use rsync to exclude
+  # files that we know we don't care about
+  BKUP_EXCLUDES="--exclude '*_ws/build' --exclude '*_ws/devel' --exclude '*_ws/install'"
+  sshpass -p "$PASSWORD" rsync -ar --progress -e "ssh -l $USERNAME" $BKUP_EXCLUDES $HOST:/home/$USERNAME .
 
   cd ..
   echo "Done Transfer"

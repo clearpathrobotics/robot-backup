@@ -255,12 +255,12 @@ then
 
   ############################ NETWORK #############################
   echo "Restoring Network Setup"
-  if [ -f interfaces ];
+  if [ -f netplan ];
   then
-    echo "Restoring interfaces"
-    sudo cp interfaces /etc/network/interfaces
+    echo "Restoring netplan"
+    sudo cp -r netplan/. /etc/netplan
   else
-    echo "Skipping /etc/network/interfaces; no backup"
+    echo "Skipping /etc/netplan; no backup"
   fi
   if [ -f hostname ];
   then

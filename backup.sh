@@ -65,7 +65,7 @@ then
   sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/etc/udev/rules.d .
 
   echo "Copying Network Setup"
-  sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/network/interfaces .
+  sshpass -p "$PASSWORD" scp -r $USERNAME@$HOST:/etc/netplan .
   sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/hostname .
   sshpass -p "$PASSWORD" scp $USERNAME@$HOST:/etc/hosts .
 

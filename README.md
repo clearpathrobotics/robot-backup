@@ -1,12 +1,5 @@
 # Robot Backup
-This package will automatically backup a remote robot to your local machine into a single archive.  It will back up:
-
-- etc/setup.bash
-- Home Folder
-- udev rules
-- Network Setup
-- IPTables
-- Bringup
+This package will automatically backup a remote robot's core files and directories to your local machine into a single archive. This package will also restore the backed up files onto a robot. This package can also handle backing up files on a robot running an older ROS distro (i.e. ROS Kinetic), and restoring the backed files on a robot running a newer ROS distro (i.e. ROS Melodic).
 
 ## Usage - Backing things up
 Ensure you have ```sshpass``` and ```rsync``` installed:
@@ -28,19 +21,26 @@ The script will log into the robot using SSH using and create a backup called ba
 
 The backup script will copy the following data, which can be restored later (see below):
 
-- all packages installed through APT
-- all APT sources
-- all ROSDEP sources
-- ROS bringup configuration (/etc/ros/setup.bash, /etc/ros/<distro>/ros.d)
-- networking configuration (iptables, interfaces, hosts, hostname)
-- rc.local
-- udev rules
-- all packages installed through PIP
-- systemd configuration
-- contents of /usr/sbin
-- contents of the provided user's home folder (/home/administrator by default)
-- provided user's permission groups
-
+- Home Folder: ```~/```
+- ```udev``` Rules: ```/etc/udev/rules.d```
+- Network Setup:
+  - ```/etc/network/interfaces```
+  - ```/etc/netplan```
+  - ```/etc/hostname```
+  - ```/etc/hosts```
+- IP Tables: ```/etc/iptables```
+- Bringup Files:
+  - ```/etc/ros/setup.bash```
+  - ```/etc/ros/$ROSDISTRO/ros.d```
+  - ```/usr/sbin/*start```
+  - ```/usr/sbin/*stop```
+- ```rosdep``` sources: ```/etc/ros/rosdep```
+- ```rc.local``` File: ```/etc/rc.local```
+- ```pip``` packages
+- ```systemd``` configuration: ```/etc/systemd/system```
+- ```apt``` sources: ```/etc/apt/sources.list.d```
+- ```apt``` packages
+- User Permission Groups
 
 ## Usage - Restoring from a backup
 Before restoring from the backup you may find it helpful to completely reset your robot to its factory OS.  You can download OS installation images from Clearpath Robotics here: http://packages.clearpathrobotics.com/stable/images/latest/.  Simply download the image appropriate to your robot, write it to a USB drive using unetbootin (or a similar tool), and follow the instructions in your robot's user manual for reinstalling the OS.  You can find the user guides & tutorials here: https://support.clearpathrobotics.com/hc/en-us
@@ -54,7 +54,6 @@ e.g.
 ```bash restore.sh my_robot```
 
 Do not run the restore script as root, as doing so may result in errors.
-
 
 ## Usage - Upgrading from ROS Kinetic to Melodic
 *WARNING* This feature is experimental and may not work 100% correctly yet.
@@ -74,7 +73,6 @@ This will do the same procedure as the restore.sh script, described above, but w
 Note that user-generated files in the home folder, as well as any files the user modified themselves elsewhere on the system may not be correctly migrated; in this case it is incumbant upon the user to migrate their own files manually as necessary.
 
 We recommend using the default "No" option when asked to reinstall APT packages.  By default the upgrade script will make a file in the user's home folder called restore-apt.sh, which will contain the names of all packages to be installed.  We advise double-checking this list and ensuring that all packages are correct before running restore-apt.sh.
-
 
 ## Troubleshooting
 The backup.sh script can hang if you have not previously SSH'd into your robot, or if its SSH keys have changed.  If this occurs, run the following command on your local computer:

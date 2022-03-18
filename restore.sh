@@ -80,7 +80,7 @@ then
     fi
   fi
 
-  echo "Checking ROS distro"
+  echo "Checking backup ROS distro"
   if [ ! -f "ROS_DISTRO" ];
   then
     echo "ERROR: no ROS distro specified in backup. Aborting."
@@ -190,7 +190,7 @@ then
   else
     echo "Skipping /etc/hosts; no backup"
   fi
-  if [ -f iptables ];
+  if [ -d iptables ];
   then
     echo "Restoring iptables"
     sudo cp -r iptables/. /etc/iptables

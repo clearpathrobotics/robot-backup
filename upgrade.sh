@@ -1,7 +1,7 @@
 #!/bin/bash
 # @author       Chris Iverach-Brereton <civerachb@clearpathrobotics.com>
 # @author       David Niewinski <dniewinski@clearpathrobotics.com>
-# @description  Restores a backup of a single robot's and upgrades it from ROS Kinetic to Melodic
+# @description  Restores a backup of a robot's core files and directories, and upgrades relevant #               files and directories from the backup ROS distro to the robot's current ROS distro.
 
 ############################## FUNCTION DEFINITIONS ############################
 
@@ -157,7 +157,7 @@ then
     fi
   fi
 
-  echo "Checking ROS distro"
+  echo "Checking backup ROS distro"
   if [ ! -f "ROS_DISTRO" ];
   then
     echo "ERROR: no ROS distro specified in backup. Aborting."
@@ -168,17 +168,13 @@ then
   ROSDISTRO=$(cat ROS_DISTRO)
   echo "ROS distro in backup is $ROSDISTRO"
 
-  # check that the ROS distribution in the backup is kinetic
-  if [ "$ROSDISTRO" != "kinetic" ];
-  then
-    echo "ERROR: this backup is using ROS $ROSDISTRO; only upgrading from kinetic is currently supported. Aborting."
-    cleanup "$1"
-    exit 1
-  else
-    OLD_ROSDISTRO="$ROSDISTRO"
-    ROSDISTRO="melodic"
-    echo "+++++ Upgrading from ROS $OLD_ROSDISTRO to $ROSDISTRO +++++"
-  fi
+  OLD_ROSDISTRO="$ROSDISTRO"
+
+  echo "Checking current ROS distro"
+  ROSDISTRO=$(ls -rt /opt/ros | tail -1)
+  echo "ROS distro is $ROSDISTRO"
+    
+  echo "+++++ Upgrading from ROS $OLD_ROSDISTRO to $ROSDISTRO +++++"
 
   if [ "$USERNAME" != "$(whoami)" ];
   then
@@ -283,7 +279,7 @@ then
   else
     echo "Skipping /etc/hosts; no backup"
   fi
-  if [ -f iptables ];
+  if [ -d iptables ];
   then
     echo "Restoring iptables"
     sudo cp -r iptables/. /etc/iptables
@@ -336,7 +332,6 @@ then
     # to be able to reliably reinstall them all
     if [[ $PKG = ros-$OLD_ROSDISTRO-* ]];
     then
-      # packages that are of the form ros-kinetic-* need to be upgraded to ros-melodic-*
       NEW_PKG=$(changeRosDistroPackage "$OLD_ROSDISTRO" "$ROSDISTRO" $PKG)
 
       if [ $INSTALL_APT == 1 ];
